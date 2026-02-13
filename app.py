@@ -1,64 +1,53 @@
 import streamlit as st
 import pandas as pd
 
-# --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(page_title="Mon Chantier", page_icon="🏗️")
+# Configuration de la page
+st.set_page_config(page_title="Consultation Salaire Chantier", page_icon="🏗️")
 
-# --- VOTRE LIEN GOOGLE SHEETS ---
-# Remplacez le lien ci-dessous par VOTRE lien (celui qui finit par .csv)
-sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSITcdQPLoiYFNsZAcd9ogxfeb6oCyWf4-L3hBXOrypOUm-g2AZ4S60VpNu0PpJlMf7i1JScEMnci95/pubhtml"
+# LIEN GOOGLE SHEETS (Assurez-vous d'avoir bien mis le lien .csv ici)
+sheet_url = "VOTRE_LIEN_CSV_ICI"
 
-# --- FONCTION POUR CHARGER LES DONNÉES ---
-@st.cache_data
+@st.cache_data(ttl=600) # Rafraîchit les données toutes les 10 min
 def load_data():
     try:
+        # Lecture du CSV
         df = pd.read_csv(sheet_url)
-        # On s'assure que le Matricule est lu comme du texte (pas un nombre)
-        df['Matricule'] = df['Matricule'].astype(str)
+        # Nettoyage des noms de colonnes au cas où il y aurait des espaces
+        df.columns = df.columns.str.strip()
+        # On force tout en texte pour la comparaison
+        df = df.astype(str)
         return df
     except Exception as e:
-        st.error("Erreur de connexion au fichier Excel.")
+        st.error("⚠️ Connexion à la base de données impossible. Vérifiez le lien .csv")
         return None
 
-# --- INTERFACE DE L'APPLICATION ---
-st.title("🏗️ Chantier Connect")
-st.write("Bienvenue. Entrez votre matricule pour voir votre solde.")
+# Interface
+st.title("🏗️ Espace Salarié - Chantier")
+st.write("Entrez votre matricule pour consulter vos informations.")
 
-# Champ de saisie du mot de passe
-matricule_input = st.text_input("Votre Matricule (Code Secret)", type="password")
+matricule_saisi = st.text_input("Matricule (ex: AX7K9P2L)", type="default").strip()
 
-if matricule_input:
+if matricule_saisi:
     df = load_data()
     
     if df is not None:
-        # On cherche la ligne qui correspond au matricule
-        user_row = df[df['Matricule'] == matricule_input]
+        # Recherche du matricule
+        user_data = df[df['Matricule'] == matricule_saisi]
         
-        if not user_row.empty:
-            # On récupère les infos de la première ligne trouvée
-            nom = user_row.iloc[0]['Nom']
-            jours = user_row.iloc[0]['Jours']
-            solde = user_row.iloc[0]['Solde']
-            message = user_row.iloc[0]['Message']
+        if not user_data.empty:
+            row = user_data.iloc[0]
+            st.success(f"✅ Bienvenue, {row['Nom']}")
             
-            # --- AFFICHAGE DES RÉSULTATS ---
-            st.success(f"Salam, {nom} 👋")
+            # Affichage des compteurs
+            c1, c2 = st.columns(2)
+            c1.metric("Jours Travaillés", f"{row['Jours']} j")
+            c2.metric("Solde à percevoir", f"{row['Solde']} DH")
             
-            # On crée 2 colonnes pour faire joli
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.metric(label="Jours Travaillés", value=f"{jours} Jours")
-            
-            with col2:
-                st.metric(label="Net à Payer", value=f"{solde} DH")
-            
-            if pd.notna(message):
-                st.info(f"Message du bureau : {message}")
-                
+            # Message si présent
+            if row['Message'] != "nan" and row['Message'] != "":
+                st.info(f"💬 Message : {row['Message']}")
         else:
-            st.error("❌ Matricule incorrect. Essayez encore.")
+            st.error("❌ Matricule non trouvé. Vérifiez votre saisie.")
 
-# Pied de page discret
 st.markdown("---")
-st.caption("Système sécurisé - Direction du Chantier")
+st.caption("Actualisé en temps réel à partir du bureau de pointage.")
