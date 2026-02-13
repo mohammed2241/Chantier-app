@@ -1,53 +1,51 @@
 import streamlit as st
 import pandas as pd
 
-# Configuration de la page
-st.set_page_config(page_title="Consultation Salaire Chantier", page_icon="🏗️")
+st.set_page_config(page_title="Consultation Salaire", page_icon="🏗️")
 
-# LIEN GOOGLE SHEETS (Assurez-vous d'avoir bien mis le lien .csv ici)
+# Votre lien CSV (Vérifiez qu'il est bien à jour)
 sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSITcdQPLoiYFNsZAcd9ogxfeb6oCyWf4-L3hBXOrypOUm-g2AZ4S60VpNu0PpJlMf7i1JScEMnci95/pub?output=csv"
 
-@st.cache_data(ttl=600) # Rafraîchit les données toutes les 10 min
+# On baisse le TTL à 60 secondes pour que vos modifs Excel s'affichent vite
+@st.cache_data(ttl=60) 
 def load_data():
     try:
-        # Lecture du CSV
         df = pd.read_csv(sheet_url)
-        # Nettoyage des noms de colonnes au cas où il y aurait des espaces
         df.columns = df.columns.str.strip()
-        # On force tout en texte pour la comparaison
+        # CETTE LIGNE remplace les vides (nan) par 0
+        df = df.fillna("0")
         df = df.astype(str)
         return df
     except Exception as e:
-        st.error("⚠️ Connexion à la base de données impossible. Vérifiez le lien .csv")
+        st.error("Erreur de connexion.")
         return None
 
-# Interface
 st.title("🏗️ Espace Salarié - Chantier")
-st.write("Entrez votre matricule pour consulter vos informations.")
 
-matricule_saisi = st.text_input("Matricule (ex: AX7K9P2L)", type="default").strip()
+# Ici on change l'exemple pour correspondre à votre vrai tableau
+matricule_saisi = st.text_input("Entrez votre Matricule (ex: *******)", type="default").strip()
 
 if matricule_saisi:
     df = load_data()
-    
     if df is not None:
-        # Recherche du matricule
         user_data = df[df['Matricule'] == matricule_saisi]
         
         if not user_data.empty:
             row = user_data.iloc[0]
             st.success(f"✅ Bienvenue, {row['Nom']}")
             
-            # Affichage des compteurs
             c1, c2 = st.columns(2)
-            c1.metric("Jours Travaillés", f"{row['Jours']} j")
-            c2.metric("Solde à percevoir", f"{row['Solde']} DH")
+            # Affichage propre même si c'était vide
+            jours_val = row['Jours'] if row['Jours'] != "nan" else "0"
+            solde_val = row['Solde'] if row['Solde'] != "nan" else "0"
             
-            # Message si présent
-            if row['Message'] != "nan" and row['Message'] != "":
+            c1.metric("Jours Travaillés", f"{jours_val} j")
+            c2.metric("Solde à percevoir", f"{solde_val} DH")
+            
+            if "Message" in row and row['Message'] not in ["nan", "0", ""]:
                 st.info(f"💬 Message : {row['Message']}")
         else:
-            st.error("❌ Matricule non trouvé. Vérifiez votre saisie.")
+            st.error("❌ Matricule non trouvé.")
 
 st.markdown("---")
-st.caption("Actualisé en temps réel à partir du bureau de pointage.")
+st.caption("Données actualisées toutes les minutes.")
