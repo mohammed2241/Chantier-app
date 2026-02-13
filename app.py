@@ -5,7 +5,7 @@ import pandas as pd
 st.set_page_config(page_title="Consultation Salaire Chantier", page_icon="🏗️")
 
 # LIEN GOOGLE SHEETS (Assurez-vous d'avoir bien mis le lien .csv ici)
-sheet_url = "VOTRE_LIEN_CSV_ICI"
+sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSITcdQPLoiYFNsZAcd9ogxfeb6oCyWf4-L3hBXOrypOUm-g2AZ4S60VpNu0PpJlMf7i1JScEMnci95/pub?output=csv"
 
 @st.cache_data(ttl=600) # Rafraîchit les données toutes les 10 min
 def load_data():
