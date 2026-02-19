@@ -5,7 +5,7 @@ from fpdf import FPDF
 st.set_page_config(page_title="Suivi de Paie Pro", page_icon="🏗️")
 
 # Votre lien CSV
-sheet_url = "https://chantier-app-wigrebynh82qparidln5rr.streamlit.app/"
+sheet_url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSITcdQPLoiYFNsZAcd9ogxfeb6oCyWf4-L3hBXOrypOUm-g2AZ4S60VpNu0PpJlMf7i1JScEMnci95/pub?output=csv"
 
 @st.cache_data(ttl=60)
 def load_data():
